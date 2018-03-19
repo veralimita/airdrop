@@ -7,7 +7,11 @@ class Core extends EventEmitter {
 		super();
 
 		this.config = require('nodejs-config')(
-			__dirname
+			__dirname,
+			function()
+			{
+				return process.env.NODE_ENV;
+			}
 		);
 	}
 
@@ -19,6 +23,12 @@ class Core extends EventEmitter {
 		await Promise.all(require('./modules').map(async (module) => {
 			return await module.call(this).catch(console.error)
 		}));
+
+		if (process.env.NODE_ENV == 'test') {
+			await Promise.all(require('./test').map(async (module) => {
+				return await module.call(this).catch(console.error)
+			}));
+		}
 
 		console.log("app ready")
 		this.emit("ready");
