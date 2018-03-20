@@ -9,7 +9,7 @@ client.on("error", (err) => {
 
 let i = 0;
 let arr = [];
-lineReader.eachLine('./output.csv', (line, last, cb)=> {
+lineReader.eachLine('./src/generation/output.csv', (line, last, cb)=> {
 	i++;
 	arr.push(line);
 	arr.push(1);

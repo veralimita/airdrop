@@ -1,19 +1,32 @@
 const async = require('async'),
-	__createWallet = Symbol('createWallet');
+	__createWallet = Symbol('createWallet'),
+	quit = Symbol('quit');
 
 class Storage {
-	constructor (app) {
+	constructor (app, cb) {
 		this.app = app;
+		app.redis.createClient('codes', (err, client) => {
+			this.client = client;
+		});
+	}
+
+	[quit] () {
+		this.client && this.client.quit();
 	}
 
 	getRandomCode (cb) {
 		async.waterfall(
 			[
 				(cb) => {
-					this.app["redis"].send_command('RANDOMKEY', cb);
+					this.client.send_command('RANDOMKEY', (err, resp) => {
+						if (err || !resp) {
+							return cb(err || new Error('empty key'))
+						}
+						cb(null, resp)
+					});
 				},
 				(key, cb) => {
-					this.app["redis"].del(key, (err) => {
+					this.client.del(key, (err) => {
 						cb(err, key)
 					});
 				},
@@ -26,15 +39,13 @@ class Storage {
 			})
 	}
 
-	[__createWallet] (code, cb){
+	[__createWallet] (code, cb) {
 		async.tryEach([
 				(cb) => {
-					this.app["redis"].hmset(["wallet", code, 1], (err, result) => {
-						cb(err, code);
-					});
+					this.app.wallet.createWallet(code, cb);
 				},
 				(cb) => {
-					this.app["redis"].set(code, 1, (err, result) => {
+					this.client.set(code, 1, (err, result) => {
 						cb(err || new Error('Cant create wallet'), code);
 					});
 				}
@@ -45,8 +56,13 @@ class Storage {
 }
 
 module.exports = function () {
-
 	this.storage = new Storage(this);
+
+	this.on('quit', () => {
+		this.storage[quit];
+		console.log('QUIT FROM STORAGE')
+	});
+
 
 	return Promise.resolve();
 };

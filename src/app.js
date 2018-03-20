@@ -24,12 +24,6 @@ class Core extends EventEmitter {
 			return await module.call(this).catch(console.error)
 		}));
 
-		if (process.env.NODE_ENV == 'test') {
-			await Promise.all(require('./test').map(async (module) => {
-				return await module.call(this).catch(console.error)
-			}));
-		}
-
 		console.log("app ready")
 		this.emit("ready");
 	}
