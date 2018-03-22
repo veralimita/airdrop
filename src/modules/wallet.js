@@ -3,7 +3,7 @@ const async = require('async'),
 
 class Wallet {
 	constructor (redis) {
-		redis.createClient('wallet', (err, client)=>{
+		redis.createClient('wallet', (err, client) => {
 			this.client = client;
 		});
 	}
@@ -12,8 +12,37 @@ class Wallet {
 		this.client && this.client.quit();
 	}
 
-	createWallet(code, cb){
-		this.client.set(code, 100, (err, result) => {
+	updateWallet (code, field, value, cb) {
+		async.waterfall([
+			(cb) => {
+				this.getWallet(code, cb)
+			},
+			(wallet, cb) => {
+				wallet[field] = value;
+				this.client.set(code, JSON.stringify(wallet), cb)
+			},
+		], cb);
+	}
+
+	getWallet (code, cb) {
+		this.client.get(code, (err, resp) => {
+			if (err || !resp) {
+				return cb(err || "Walet doesn't exists");
+			}
+
+			let wallet, error;
+			try {
+				wallet = JSON.parse(resp);
+			} catch (e) {
+				error = e;
+			}
+
+			cb(error, wallet);
+		});
+	}
+
+	createWallet (code, cb) {
+		this.client.set(code, JSON.stringify({code}), (err, result) => {
 			cb(err, code);
 		});
 	}

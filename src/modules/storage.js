@@ -20,7 +20,7 @@ class Storage {
 				(cb) => {
 					this.client.send_command('RANDOMKEY', (err, resp) => {
 						if (err || !resp) {
-							return cb(err || new Error('empty key'))
+							return cb(err || 'empty key')
 						}
 						cb(null, resp)
 					});
@@ -45,7 +45,7 @@ class Storage {
 					this.app.wallet.createWallet(code, cb);
 				},
 				(cb) => {
-					this.client.set(code, 1, (err, result) => {
+					this.client.set(code, JSON.stringify({ code }), (err, result) => {
 						cb(err || new Error('Cant create wallet'), code);
 					});
 				}
