@@ -41,7 +41,5 @@ module.exports = function () {
 
 	this.dictionary = new Dictionary('PQFM7BHWZ0RCTG46VKA928JENX5S1Y3D');
 
-	console.log(this.dictionary.codeIsValid('PQFM-7BZ0-RG46-V8KA'));
-
 	return Promise.resolve();
 }

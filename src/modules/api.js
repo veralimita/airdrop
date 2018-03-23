@@ -5,6 +5,7 @@ module.exports = function () {
 	const router = express.Router();
 
 	router.post('/code', (req, res) => {
+		console.log('HHHH')
 		if (req.body && req.body.source) {
 			switch (req.body.source) {
 				case 'rocketchat':
@@ -23,6 +24,29 @@ module.exports = function () {
 							},
 							(code, cb) => {
 								this.rocketchat.createUser(req.body.payload, code, (err, response) => {
+									cb(err, code)
+								})
+							}
+						], (err, response) => {
+							res.send({ err, response });
+						});
+					break;
+				case 'telegram':
+					async.waterfall(
+						[
+							(cb) => {
+								this.telegram.getUser(req.body.payload, (err, result) => {
+									if (err || result) {
+										return cb(err || 'Telegram user already exists')
+									}
+									cb(null, null)
+								});
+							},
+							(arg, cb) => {
+								this.storage.getRandomCode(cb);
+							},
+							(code, cb) => {
+								this.telegram.createUser(req.body.payload, code, (err, response) => {
 									cb(err, code)
 								})
 							}
@@ -61,7 +85,27 @@ module.exports = function () {
 							res.send({ err, response });
 						});
 					break;
-				default:
+				case 'telegram':
+					async.waterfall(
+						[
+							(cb) => {
+								this.telegram.getUser(req.body.payload, (err, result) => {
+									if (err || !result) {
+										return cb(err || 'Telegram user doesn\'t exist')
+									}
+									cb(null, result)
+								});
+							},
+							(code, cb) => {
+								this.wallet.getWallet(code, (err, response) => {
+									cb(err, response)
+								})
+							}
+						], (err, response) => {
+							res.send({ err, response });
+						});
+					break;
+					default:
 					res.sendStatus(500)
 			}
 		} else {

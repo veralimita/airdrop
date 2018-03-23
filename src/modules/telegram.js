@@ -1,8 +1,8 @@
 const async = require('async'),
 	quit = Symbol('quit');
 
-class Rocketchat {
-	constructor (app, cb) {
+class Telegram {
+	constructor (app) {
 		this.app = app;
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
@@ -17,31 +17,31 @@ class Rocketchat {
 		async.waterfall([(cb) => {
 			this.getUser(user, (err, result) => {
 				if (err || result) {
-					return cb(err || 'Rocketchat user already exists')
+					return cb(err || 'Telegram user already exists')
 				}
 				cb(null, code)
 			})
 		},
 			(arg, cb) => {
-				this.client.set(`rocketchat:${user.id}`, code, cb)
+				this.client.set(`telegram:${user.id}`, code, cb)
 			},
 			(arg, cb) => {
-				this.app.wallet.updateWallet(code, 'rocketchat', user, cb)
+				this.app.wallet.updateWallet(code, 'telegram', user, cb)
 			},
 		], cb);
 	}
 
 	getUser (user, cb) {
-		this.client.get(`rocketchat:${user.id}`, cb);
+		this.client.get(`telegram:${user.id}`, cb);
 	}
 
 }
 
 module.exports = function () {
-	this.rocketchat = new Rocketchat(this);
+	this.telegram = new Telegram(this);
 
 	this.on('quit', () => {
-		this.rocketchat[quit];
+		this.telegram[quit];
 	});
 
 
