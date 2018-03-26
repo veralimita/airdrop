@@ -3,6 +3,7 @@ const async = require('async');
 class Refer {
 	constructor (app) {
 		this.app = app;
+		this.length = 12;
 		this.dictionary = 'QAZWSXEDCRFTGBYHNJMKLP23456789';
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
@@ -12,10 +13,10 @@ class Refer {
 	invite (code, cb) {
 		const refer = this.generate();
 		this.client.get(`refer:${refer}`, (err, resp) => {
-			if (!resp) {
-				return invite(code, cb)
+				if (resp) {
+				return this.invite(code, cb)
 			}
-			this.client(`refer:${refer}`, code, (err, resp) => {
+			this.client.set(`refer:${refer}`, code, (err, resp) => {
 				cb(err, refer)
 			})
 		})
@@ -23,7 +24,7 @@ class Refer {
 
 	generate () {
 		let id = this.getLetter();
-		for (let i = 1; i < 6; i++) {
+		for (let i = 1; i < this.length; i++) {
 			id = id + this.getLetter(id.substr(-1, 1))
 		}
 		return id

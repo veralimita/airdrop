@@ -5,7 +5,7 @@ module.exports = function () {
 	const router = express.Router();
 
 	router.post('/code', (req, res) => {
-		console.log('HHHH')
+		console.log('TOKEN API')
 		if (req.body && req.body.source) {
 			switch (req.body.source) {
 				case 'rocketchat':

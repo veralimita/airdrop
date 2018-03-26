@@ -2,8 +2,9 @@ const async = require('async'),
 	quit = Symbol('quit');
 
 class Wallet {
-	constructor (redis) {
-		redis.createClient('wallet', (err, client) => {
+	constructor (app) {
+		this.app = app;
+		this.app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
 		});
 	}
@@ -36,13 +37,27 @@ class Wallet {
 			} catch (e) {
 				error = e;
 			}
-
+			console.log('WALLET', wallet);
 			cb(error, wallet);
 		});
 	}
 
 	createWallet (code, cb) {
-		this.client.set(code, JSON.stringify({code}), (err, result) => {
+		async.waterfall([
+			(cb) => {
+				this.client.set(code, JSON.stringify({ code }), (err, result) => {
+					cb(err, result);
+				});
+			},
+			(wallet, cb) => {
+				console.log('REFER GENERATION');
+				this.app.refer.invite(code, (err, resp) => {
+					this.updateWallet(code, 'refer', { code: resp, activated: [] }, (err, resp) => {
+						cb(null, code)
+					})
+				});
+			}
+		], (err, resp) => {
 			cb(err, code);
 		});
 	}
@@ -50,7 +65,7 @@ class Wallet {
 
 module.exports = function () {
 
-	this.wallet = new Wallet(this.redis);
+	this.wallet = new Wallet(this);
 	this.on('quit', () => {
 		console.log('QUIT FROM WALLET');
 		this.wallet[quit];
