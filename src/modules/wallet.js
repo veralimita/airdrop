@@ -1,10 +1,11 @@
 const async = require('async'),
-	quit = Symbol('quit');
+	quit = Symbol('quit'),
+	__app = Symbol('quit');
 
 class Wallet {
 	constructor (app) {
-		this.app = app;
-		this.app.redis.createClient('wallet', (err, client) => {
+		this[__app] = app;
+		this[__app].redis.createClient('wallet', (err, client) => {
 			this.client = client;
 		});
 	}
@@ -50,8 +51,7 @@ class Wallet {
 				});
 			},
 			(wallet, cb) => {
-				console.log('REFER GENERATION');
-				this.app.refer.invite(code, (err, resp) => {
+				this[__app].refer.invite(code, (err, resp) => {
 					this.updateWallet(code, 'refer', { code: resp, activated: [] }, (err, resp) => {
 						cb(null, code)
 					})
