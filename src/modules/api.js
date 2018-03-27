@@ -1,5 +1,6 @@
 const express = require('express'),
 	async = require('async'),
+	jwt = require('express-jwt'),
 	OK = 'OK';
 
 module.exports = function () {
@@ -63,52 +64,6 @@ module.exports = function () {
 		}
 	});
 
-	router.post('/password', (req, res) => {
-		if (req.body && req.body.code) {
-			const code = req.body.code;
-			async.waterfall([
-				(cb) => {
-					this.wallet.getWallet(code, (err, resp) => {
-						if (err || !resp) {
-							return cb(err || 'Wallet doesn\'t exist');
-						}
-						cb(null, resp);
-					})
-				},
-				(wallet, cb) => {
-					if (!wallet.telegram && !wallet.rocketchat && (!wallet.email || !wallet.email.verified)) {
-						return setImmediate(cb, 'Cant provide password to this wallet');
-					}
-					this.password.create(code, (err, pwd) => {
-						cb(err, { wallet, pwd })
-					});
-				}
-			], (err, result) => {
-				if (err) {
-					res.status(500);
-					return res.send(err);
-				}
-
-				const sources = [];
-				if (result.wallet.telegram) {
-					this.rabbitConnect.send(result.wallet.telegram, 'pwd.telegram');
-					sources.push('telegram');
-				}
-				if (result.wallet.rocketchat) {
-					this.rabbitConnect.send(result.wallet.rocketchat, 'pwd.rocketchat');
-					sources.push('rocketchat');
-				}
-				if (result.wallet.email && result.wallet.email.verified) {
-					this.rabbitConnect.send(result.wallet.email, 'pwd.email');
-					sources.push('email');
-				}
-				res.send(sources);
-			})
-		} else {
-			res.sendStatus(500);
-		}
-	});
-
 	router.post('/wallet', (req, res) => {
 		if (req.body && req.body.source) {
 			switch (req.body.source) {
@@ -157,6 +112,124 @@ module.exports = function () {
 			}
 		} else {
 			res.sendStatus(500)
+		}
+	});
+
+	router.get('/wallet', jwt({ secret: process.env.JWT_SECRET }), (req, res) => {
+		if (req.user && req.user.wallet) {
+			this.wallet.getWallet(req.user.wallet, (err, response) => {
+				if (err) {
+					res.status(500);
+					return res.send(err)
+				}
+				res.send(response);
+			})
+		} else {
+			res.sendStatus(500)
+		}
+	});
+
+	router.post('/password', (req, res) => {
+		if (req.body && req.body.code) {
+			const code = req.body.code;
+			async.waterfall([
+				(cb) => {
+					this.wallet.getWallet(code, (err, resp) => {
+						if (err || !resp) {
+							return cb(err || 'Wallet doesn\'t exist');
+						}
+						cb(null, resp);
+					})
+				},
+				(wallet, cb) => {
+					if (!wallet.telegram && !wallet.rocketchat && (!wallet.email || !wallet.email.verified)) {
+						return setImmediate(cb, 'Cant provide password to this wallet');
+					}
+					this.password.create(code, (err, pwd) => {
+						cb(err, { wallet, pwd })
+					});
+				}
+			], (err, result) => {
+				if (err) {
+					res.status(500);
+					return res.send(err);
+				}
+
+				const sources = [];
+				if (result.wallet.telegram) {
+					this.rabbitConnect.send({ user: result.wallet.telegram, pwd: result.pwd }, "pwd.telegram", () => {
+						}, {
+							durable: true,
+							arguments: {
+								"x-message-ttl": 60000
+							}
+						}
+					);
+					sources.push('telegram');
+				}
+				if (result.wallet.rocketchat) {
+					this.rabbitConnect.send({ user: result.wallet.rocketchat, pwd: result.pwd }, "pwd.rocketchat", () => {
+					}, {
+						durable: true,
+						arguments: {
+							"x-message-ttl": 60000
+						}
+					});
+					sources.push('rocketchat');
+				}
+				if (result.wallet.email && result.wallet.email.verified) {
+					this.rabbitConnect.send({ user: result.wallet.email, pwd: result.pwd }, "pwd.email", () => {
+					}, {
+						durable: true,
+						arguments: {
+							"x-message-ttl": 60000
+						}
+					});
+					sources.push('email');
+				}
+				res.send(sources);
+			})
+		} else {
+			res.sendStatus(500);
+		}
+	});
+
+	router.post('/login', (req, res) => {
+		if (req.body && req.body.code && req.body.password) {
+			const code = req.body.code;
+			const pwd = req.body.password;
+			async.waterfall([
+				(cb) => {
+					this.wallet.getWallet(code, (err, resp) => {
+						if (err || !resp) {
+							return cb(err || 'Wallet doesn\'t exist');
+						}
+						cb(null, resp);
+					})
+				},
+				(wallet, cb) => {
+					this.password.getPassword(pwd, (err, resp) => {
+						if (err || !resp || (resp !== code)) {
+							return cb(err || 'Password is incorrect');
+						}
+						cb(null, resp);
+
+
+						cr
+						this.password.deletePassword(pwd, () => {
+							//TODO error handing
+						})
+					})
+				}
+			], (err) => {
+				if (err) {
+					res.status(500);
+					return res.send(err);
+				}
+				res.send({ token: this.jwt.create({ wallet: code }) });
+			})
+		} else {
+			res.sendStatus(500);
 		}
 	});
 

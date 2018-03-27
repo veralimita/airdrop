@@ -10,6 +10,14 @@ class Password {
 		});
 	}
 
+	getPassword (password, cb) {
+		this.client.get(`password:${password}`, cb);
+	}
+
+	deletePassword (password, cb) {
+		this.client.del(`password:${password}`, cb);
+	}
+
 	create (code, cb) {
 		const password = this.generate();
 		this.client.get(`password:${password}`, (err, resp) => {
