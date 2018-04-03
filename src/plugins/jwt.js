@@ -1,13 +1,18 @@
 const assert = require("assert"),
-	jsonwebtoken = require('jsonwebtoken');
+	jsonwebtoken = require('jsonwebtoken'),
+	__secret = Symbol('secret');
 
 class JWT {
 	constructor (secret) {
-		this.secret = secret;
+		this[__secret] = secret;
 	}
 
-	create (data) {
-		return jsonwebtoken.sign(data, this.secret, { expiresIn: '1h' });
+	create (data, expiresIn) {
+		return jsonwebtoken.sign(data, this[__secret], { expiresIn: expiresIn || '1h'});
+	}
+
+	verify (token, cb) {
+		jsonwebtoken.verify(token, this[__secret], cb);
 	}
 }
 

@@ -38,7 +38,6 @@ class Wallet {
 			} catch (e) {
 				error = e;
 			}
-			console.log('WALLET', wallet);
 			cb(error, wallet);
 		});
 	}

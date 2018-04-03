@@ -1,5 +1,5 @@
 const assert = require("assert"),
-	Rabbitmq = require('../rabbitmq-boilerplate/index.js');
+	Rabbitmq = require('rabbitmq-boilerplate');
 
 module.exports = function () {
 
