@@ -313,7 +313,7 @@ module.exports = function () {
 			], (err, _) => {
 				if (err) {
 					res.status(500);
-					return res.send(err)
+					return res.send({err})
 				}
 				res.send({ token: this.jwt.create({ wallet: code }), response: OK });
 			});
