@@ -1,6 +1,7 @@
 const assert = require("assert");
 
-module.exports = function () {
+module.exports = function
+	() {
 
 	this.on("ready", () => {
 
