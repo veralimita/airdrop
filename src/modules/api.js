@@ -270,7 +270,7 @@ module.exports = function () {
 					res.status(500);
 					return res.send(err)
 				}
-				res.send({ token: this.jwt.create({ wallet: code }), response });
+				res.send({ token: this.jwt.create({ wallet: response.code }), response });
 			})
 		} else {
 			res.sendStatus(500)
@@ -305,7 +305,8 @@ module.exports = function () {
 					this.email.create(email, code, cb);
 				},
 				(_, cb) => {
-					this.email.sendLink(email, code, () => {
+					this.email.sendLink({value: email}, code, (err, resp) => {
+						console.log('sended link', {err, resp})
 					});
 					setImmediate(cb)
 				},
