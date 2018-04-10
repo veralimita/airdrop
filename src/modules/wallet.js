@@ -14,13 +14,49 @@ class Wallet {
 		this.client && this.client.quit();
 	}
 
+	appendWalletToSocial (source, plugin, wallet, user, code, cb) {
+		if (wallet[source]) return setImmediate(cb, `This wallet has a ${source} account`);
+		async.parallel([
+			(cb) => {
+				plugin.update(user[source], code, cb)
+			},
+			(cb) => {
+				this.updateWallet(code, source, { id: user[source] }, cb)
+			}
+		], (error, results) => {
+			if (error) {
+				async.parallel([
+					(cb) => {
+						plugin.update(user[source], 'CREATED', cb)
+					},
+					(cb) => {
+						this.updateWallet(code, source, { id: user[source] }, cb)
+					}
+				], (error) => {
+					console.log('ROLLBACK APPEND WALLET TO ' + source, error ? 'failed' : 'passed')
+					cb(error || 'Update failed')
+				})
+			} else {
+				this.getWallet(code, (err, wallet) => {
+					cb(error, { source, wallet })
+				})
+			}
+		})
+	}
+
 	updateWallet (code, field, value, cb) {
 		async.waterfall([
 			(cb) => {
 				this.getWallet(code, cb)
 			},
 			(wallet, cb) => {
-				wallet[field] = value;
+				if (value) {
+					wallet[field] = value;
+				}
+				else {
+					delete wallet[field];
+				}
+				console.log('WALLET', code, field, value, wallet)
 				this.client.set(code, JSON.stringify(wallet), cb)
 			},
 		], cb);
