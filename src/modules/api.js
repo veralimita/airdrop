@@ -33,7 +33,11 @@ module.exports = function () {
 						return res.status(500).send({ error })
 					}
 					const token = this.jwt.create({ wallet: response, facebook: result.user.id })
-					return res.cookie('auth-token', token, { maxAge: cookiesLive }).redirect('http://localhost:8000/wallet')
+					return res.cookie('auth-token', token, {
+						maxAge: cookiesLive,
+						overwrite: true,
+						httpOnly: false
+					}).redirect('http://localhost:8000/wallet')
 				})
 
 			} else {
@@ -68,7 +72,11 @@ module.exports = function () {
 						return res.status(500).send({ error })
 					}
 					const token = this.jwt.create({ wallet: response, twitter: req.user.id })
-					return res.cookie('auth-token', token, { maxAge: cookiesLive }).redirect('http://localhost:8000/wallet')
+					return res.cookie('auth-token', token, {
+						maxAge: cookiesLive,
+						overwrite: true,
+						httpOnly: false
+					}).redirect('http://localhost:8000/wallet')
 				})
 			} else {
 				res.send({ error: 'Ooooooooooh! NO!' })
@@ -105,7 +113,11 @@ module.exports = function () {
 					}
 
 					const token = this.jwt.create({ wallet: response, google: req.user.profile.id })
-					return res.cookie('auth-token', token, { maxAge: cookiesLive }).redirect('http://localhost:8000/wallet')
+					return res.cookie('auth-token', token, {
+						maxAge: cookiesLive,
+						overwrite: true,
+						httpOnly: false
+					}).redirect('http://localhost:8000/wallet')
 				})
 
 			} else {
@@ -376,32 +388,30 @@ module.exports = function () {
 					this.google.get(req.user.google, (err, code) => {
 						this.wallet.getWallet(code, (err, resp) => {
 							const token = this.jwt.create({
-								wallet: resp || 'CREATED',
+								wallet: (resp && resp.code) || 'CREATED',
 								google: req.user.google
 							})
-							return res.cookie('auth-token', token, { maxAge: cookiesLive }).send({ response: { code: resp || 'CREATED' } })
+							return res.send({ response: resp || { code: 'CREATED' }, token })
 						})
 					})
 				} else if (req.user.twitter) {
 					this.twitter.get(req.user.twitter, (err, code) => {
 						this.wallet.getWallet(code, (err, resp) => {
 							const token = this.jwt.create({
-								wallet: resp || 'CREATED',
+								wallet: (resp && resp.code) || 'CREATED',
 								twitter: req.user.twitter
 							})
-							return res.cookie('auth-token', token, { maxAge: cookiesLive }).send({ response: { code: resp || 'CREATED' } })
+							return res.send({ response: resp || { code: 'CREATED' }, token })
 						})
 					})
 				} else if (req.user.facebook) {
 					this.fb.get(req.user.facebook, (err, code) => {
-						console.log('fb code', code)
 						this.wallet.getWallet(code, (err, resp) => {
-							console.log('wallet', resp)
 							const token = this.jwt.create({
-								wallet: resp || 'CREATED',
+								wallet: (resp && resp.code) || 'CREATED',
 								facebook: req.user.facebook
 							})
-							return res.cookie('auth-token', token, { maxAge: cookiesLive }).send({ response: { code: resp || 'CREATED' } })
+							return res.send({ response: resp || { code: 'CREATED' }, token })
 						})
 					})
 				} else {
@@ -411,7 +421,7 @@ module.exports = function () {
 						twitter: req.user.twitter,
 						google: req.user.google
 					})
-					return res.cookie('auth-token', token, { maxAge: cookiesLive }).send({ response: { code: null } })
+					return res.send({ response: { code: null }, token })
 				}
 			} else {
 				const token = this.jwt.create({
@@ -422,13 +432,13 @@ module.exports = function () {
 				})
 				this.wallet.getWallet(req.user.wallet, (error, response) => {
 					if (error) {
-						return res.status(500).cookie('auth-token', token, { maxAge: cookiesLive }).send({ error })
+						return res.status(500).send({ error, token })
 					}
-					return res.cookie('auth-token', token, { maxAge: cookiesLive }).send({ response });
+					return res.send({ response, token });
 				})
 			}
 		} else {
-			res.status(500).send({ error: 'Wallet doesnt exist' })
+			res.status(500).send({ error: 'Wallet doesnt exist', user: req.user })
 		}
 	});
 
@@ -437,7 +447,7 @@ module.exports = function () {
 			if (req.user.wallet !== 'CREATED') {
 				return res.status(500).send({ error: 'Wallet token exists' })
 			}
-			const code = req.body && req.body.code;
+			const code = req.body && req.body.code.toUpperCase();
 			async.waterfall([
 					(cb) => {
 						this.wallet.getWallet(code, cb)
@@ -465,18 +475,18 @@ module.exports = function () {
 					const token = this.jwt.create({
 						wallet: response.wallet
 					})
-					return res.cookie('auth-token', token, { maxAge: cookiesLive }).send({ response: response.wallet })
+					return res.send({ response: response.wallet, token })
 				}
 			)
 		} else {
-			res.status(500).send({ error: 'Wallet doesnt exist' })
+			res.status(500).send({ error: 'Wallet doesnt exist', user: req.user })
 		}
 	});
 
 	router.post('/email', jwt({ secret: process.env.JWT_SECRET }), (req, res) => {
 		if (req.user && req.user.wallet && req.body && req.body.value) {
-			const email = req.body.value.toLowerCase(),
-				code = req.user.wallet;
+			const email = req.body.value.toLowerCase();
+			let code = req.user.wallet;
 			async.waterfall([
 				(cb) => {
 					this.email.get(email, (error, resp) => {
@@ -501,17 +511,21 @@ module.exports = function () {
 					this.email.create(email, code, cb);
 				},
 				(_, cb) => {
+					// TODO email worker
 					this.email.sendLink({ value: email }, code, (error, resp) => {
 						console.log('sended link', { error, resp })
 					});
-					setImmediate(cb)
+					return setImmediate(cb)
 				},
-			], (error, _) => {
+			], (error) => {
 				if (error) {
-					res.status(500);
-					return res.send({ error })
+					return res.status(500).res.send({ error })
 				}
-				res.send({ token: this.jwt.create({ wallet: code }), response: OK });
+				this.wallet.getWallet(code, (error, response) => {
+					console.log({ error, response })
+					const token = this.jwt.create({ wallet: response && response.code })
+					return res.send({ error, response, token })
+				});
 			});
 		} else {
 			res.sendStatus(500)
@@ -534,7 +548,8 @@ module.exports = function () {
 					})
 				},
 				(email, cb) => {
-					this.email.sendLink(email, code, () => {
+					this.email.sendLink(email, code, (err) => {
+						if (err) console.error(err)
 					});
 					setImmediate(cb);
 				}

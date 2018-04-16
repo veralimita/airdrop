@@ -28,7 +28,7 @@ class Email {
 						this.client.set(`email:${email}`, code, cb)
 					},
 					(cb) => {
-						this.app.wallet.updateWallet(code, 'email', { value: email }, cb);
+						this.app.wallet.updateWallet(code, 'email', { value: email, verified: false }, cb);
 					}
 				], cb);
 			}
