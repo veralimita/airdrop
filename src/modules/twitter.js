@@ -28,35 +28,9 @@ class Twitter {
 
 	//
 	create (user, cb) {
-		async.waterfall([
-			(cb) => {
-				this.get(user.id, (err, result) => {
-					if (err || result) {
-						return cb(err || 'This Twitter user already exists')
-					}
-					cb(null)
-				})
-			},
-			(cb) => {
-				this.client.set(`twitter:${user.id}`, 'CREATED', (err, res) => {
-					cb(err, 'CREATED')
-				})
-			}
-		], (err, results) => {
-			if (err) {
-				//rollback
-				async.parallel([
-					(cb) => {
-						this.delete(user.id, cb);
-					}
-				], (err) => {
-					console.log('CREATE Twitter ROLLBACK:', err ? 'failed' : 'success')
-					cb(err || 'Update failed')
-				})
-			} else {
-				cb(err, results);
-			}
-		});
+		this.client.set(`twitter:${user.id}`, 'CREATED', 'NX', (err) => {
+			cb(err, 'CREATED')
+		})
 	}
 
 	get (id, cb) {

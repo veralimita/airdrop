@@ -18,36 +18,9 @@ class FbAPI {
 	}
 
 	create (user, cb) {
-		console.log('creating', user)
-		async.waterfall([
-			(cb) => {
-				this.get(user.id, (err, result) => {
-					if (err || result) {
-						return cb(err || 'This FB user already exists')
-					}
-					cb(null)
-				})
-			},
-			(cb) => {
-				this.client.set(`fb:${user.id}`, 'CREATED', (err, res) => {
-					cb(err, 'CREATED')
-				})
-			}
-		], (err, results) => {
-			if (err) {
-				//rollback
-				async.parallel([
-					(cb) => {
-						this.delete(user.id, cb);
-					}
-				], (err) => {
-					console.log('CREATE FB ROLLBACK:', err ? 'failed' : 'success')
-					cb(err || 'Create failed')
-				})
-			} else {
-				cb(err, results);
-			}
-		});
+		this.client.set(`fb:${user.id}`, 'CREATED', 'NX', (err) => {
+			cb(err, 'CREATED')
+		})
 	}
 
 	processCode (code, cb) {

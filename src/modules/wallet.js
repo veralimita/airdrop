@@ -81,7 +81,7 @@ class Wallet {
 	createWallet (code, cb) {
 		async.waterfall([
 			(cb) => {
-				this.client.set(code, JSON.stringify({ code }), (err, result) => {
+				this.client.set(code, JSON.stringify({ code }), 'NX', (err, result) => {
 					cb(err, result);
 				});
 			},

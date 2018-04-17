@@ -14,18 +14,11 @@ class Email {
 	}
 
 	create (email, code, cb) {
-		async.waterfall([(cb) => {
-			this.get(email, (err, result) => {
-				if (err || result) {
-					return cb(err || 'This email is already used')
-				}
-				cb(null, code)
-			})
-		},
-			(_, cb) => {
+		async.waterfall([
+			(cb) => {
 				async.parallel([
 					(cb) => {
-						this.client.set(`email:${email}`, code, cb)
+						this.client.set(`email:${email}`, code, "NX", cb)
 					},
 					(cb) => {
 						this.app.wallet.updateWallet(code, 'email', { value: email, verified: false }, cb);
@@ -42,16 +35,16 @@ class Email {
 					(cb) => {
 						this.app.wallet.updateWallet(code, 'email', null, cb);
 					}
-				], (err, results) => {
+				], (err) => {
 					console.log('CREATE EMAIL ROLLBACK:', err ? 'failed' : 'success')
+					cb(err,results)
 				})
 			}
 			else {
-				this.sendLink(email, code, () => {
-					//TODO catch error
+				this.sendLink(email, code, (err) => {
+					cb(err, results)
 				})
 			}
-			cb(err, results);
 		});
 	}
 

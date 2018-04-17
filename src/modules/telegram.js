@@ -14,16 +14,9 @@ class Telegram {
 	}
 
 	createUser (user, code, cb) {
-		async.waterfall([(cb) => {
-			this.getUser(user, (err, result) => {
-				if (err || result) {
-					return cb(err || 'Telegram user already exists')
-				}
-				cb(null, code)
-			})
-		},
-			(arg, cb) => {
-				this.client.set(`telegram:${user.id}`, code, cb)
+		async.waterfall([
+			(cb) => {
+				this.client.set(`telegram:${user.id}`, code, 'NX', cb)
 			},
 			(arg, cb) => {
 				this.app.wallet.updateWallet(code, 'telegram', user, cb)

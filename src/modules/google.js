@@ -15,34 +15,9 @@ class Google {
 
 	//
 	create (user, cb) {
-		async.waterfall([
-			(cb) => {
-				this.get(user.id, (err, result) => {
-					if (err || result) {
-						return cb(err || 'This Google user already exists')
-					}
-					cb(null)
-				})
-			},
-			(cb) => {
-				this.client.set(`google:${user.id}`, 'CREATED', (err, res) => {
-					cb(err, 'CREATED')
-				})
-			}
-		], (err, results) => {
-			if (err) {
-				//rollback
-				async.parallel([
-					(cb) => {
-						this.delete(user.id, cb);
-					}
-				], (err) => {
-					console.log('CREATE Google ROLLBACK:', err ? 'failed' : 'success')
-					cb(err || 'Create failed')
-				})
-			} else {
-			cb(err, results);}
-		});
+		this.client.set(`google:${user.id}`, 'CREATED', 'NX', (err) => {
+			cb(err, 'CREATED')
+		})
 	}
 
 	update (id, code, cb) {

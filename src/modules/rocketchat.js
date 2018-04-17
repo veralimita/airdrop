@@ -14,16 +14,9 @@ class Rocketchat {
 	}
 
 	createUser (user, code, cb) {
-		async.waterfall([(cb) => {
-			this.getUser(user, (err, result) => {
-				if (err || result) {
-					return cb(err || 'Rocketchat user already exists')
-				}
-				cb(null, code)
-			})
-		},
-			(arg, cb) => {
-				this.client.set(`rocketchat:${user.id}`, code, cb)
+		async.waterfall([
+			(cb) => {
+				this.client.set(`rocketchat:${user.id}`, code, 'NX', cb)
 			},
 			(arg, cb) => {
 				this.app.wallet.updateWallet(code, 'rocketchat', user, cb)
