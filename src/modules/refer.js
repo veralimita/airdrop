@@ -14,6 +14,26 @@ class Refer {
 		this.client.get(`refer:${referral}`, cb)
 	}
 
+	canUse (referral, cb) {
+		this.client.llen(`activated:${referral}`, (err, count) => {
+			if (err || count >= 5) {
+				return cb(err || 'number of use is more than 5')
+			}
+			cb(null)
+		})
+	}
+
+	use (referral, wallet, cb) {
+		async.parallel([
+			(cb) => {
+				this.client.lpush(`activated:${wallet}`, wallet, cb)
+			},
+			(cb) => {
+				this.app.wallet.updateWallet(wallet, 'referral', referral, cb);
+			}
+		], cb);
+	}
+
 	invite (code, cb) {
 		const refer = this.generate();
 		this.client.get(`refer:${refer}`, (err, resp) => {

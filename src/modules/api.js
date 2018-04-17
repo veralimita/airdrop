@@ -173,7 +173,7 @@ module.exports = function () {
 								});
 							},
 							(code, cb) => {
-							console.log('GET WALLET')
+								console.log('GET WALLET')
 								this.wallet.getWallet(code, (error, response) => {
 									console.log('WALLET', response)
 									cb(error, response)
@@ -196,7 +196,7 @@ module.exports = function () {
 
 	router.post('/referral', (req, res) => {
 		if (req.body && req.body.source && req.body.referral) {
-			if (['rocketchat','telegram'].indexOf(req.body.source) !== -1) {
+			if (['rocketchat', 'telegram'].indexOf(req.body.source) !== -1) {
 				async.waterfall(
 					[
 						(cb) => {
@@ -220,14 +220,19 @@ module.exports = function () {
 								if (err || !response) {
 									return cb(err || 'Wrong referral code')
 								}
-								if (response && response === 'USED') {
-									return cb('This code was used 5 times')
-								}
-								cb(null, {code: response, wallet})
+								cb(null, wallet)
 							})
 						},
-						(args, cb) => {
-
+						(wallet, cb) => {
+							this.refer.canUse(req.body.referral, (err) => {
+								if (err) {
+									return cb(err)
+								}
+								cb(null, wallet)
+							})
+						},
+						(wallet, cb) => {
+							this.refer.use(req.body.referral, wallet, cb)
 						}
 					], (error, response) => {
 						res.send({ error, response });
