@@ -125,58 +125,34 @@ module.exports = function () {
 			}
 		}
 	);
+
 	router.post('/code', (req, res) => {
 		console.log('TOKEN API')
 		if (req.body && req.body.source) {
-			switch (req.body.source) {
-				case 'rocketchat':
-					async.waterfall(
-						[
-							(cb) => {
-								this.rocketchat.getUser(req.body.payload, (error, result) => {
-									if (error || result) {
-										return cb(error || 'Rocketchat user already exists')
-									}
-									cb(null, null)
-								});
-							},
-							(arg, cb) => {
-								this.storage.getRandomCode(cb);
-							},
-							(code, cb) => {
-								this.rocketchat.createUser(req.body.payload, code, (error, response) => {
-									cb(error, code)
-								})
-							}
-						], (error, response) => {
-							res.send({ error, response });
-						});
-					break;
-				case 'telegram':
-					async.waterfall(
-						[
-							(cb) => {
-								this.telegram.getUser(req.body.payload, (error, result) => {
-									if (error || result) {
-										return cb(error || 'Telegram user already exists')
-									}
-									cb(null, null)
-								});
-							},
-							(arg, cb) => {
-								this.storage.getRandomCode(cb);
-							},
-							(code, cb) => {
-								this.telegram.createUser(req.body.payload, code, (error, response) => {
-									cb(error, code)
-								})
-							}
-						], (error, response) => {
-							res.send({ error, response });
-						});
-					break;
-				default:
-					res.sendStatus(500)
+			if (['rocketchat, telegram'].indexOf(req.body.source) !== -1) {
+				async.waterfall(
+					[
+						(cb) => {
+							this[req.body.source].getUser(req.body.payload, (error, result) => {
+								if (error || result) {
+									return cb(error || `${req.body.source} exists`)
+								}
+								cb(null, null)
+							});
+						},
+						(arg, cb) => {
+							this.storage.getRandomCode(cb);
+						},
+						(code, cb) => {
+							this[req.body.source].createUser(req.body.payload, code, (error) => {
+								cb(error, code)
+							})
+						}
+					], (error, response) => {
+						res.send({ error, response });
+					});
+			} else {
+				res.sendStatus(500)
 			}
 		} else {
 			res.sendStatus(500)
@@ -185,14 +161,14 @@ module.exports = function () {
 
 	router.post('/wallet', (req, res) => {
 		if (req.body && req.body.source) {
-			switch (req.body.source) {
-				case 'rocketchat':
+			if (req.body && req.body.source) {
+				if (['rocketchat, telegram'].indexOf(req.body.source) !== -1) {
 					async.waterfall(
 						[
 							(cb) => {
-								this.rocketchat.getUser(req.body.payload, (error, result) => {
+								this[req.body.source].getUser(req.body.payload, (error, result) => {
 									if (error || !result) {
-										return cb(error || 'Rocketchat user doesn\'t exist')
+										return cb(error || `${req.body.source} user doesn't exist`)
 									}
 									cb(null, result)
 								});
@@ -205,29 +181,59 @@ module.exports = function () {
 						], (error, response) => {
 							res.send({ error, response });
 						});
-					break;
-				case 'telegram':
-					async.waterfall(
-						[
-							(cb) => {
-								this.telegram.getUser(req.body.payload, (error, result) => {
-									if (error || !result) {
-										return cb(error || 'Telegram user doesn\'t exist')
-									}
-									cb(null, result)
-								});
-							},
-							(code, cb) => {
-								this.wallet.getWallet(code, (error, response) => {
-									cb(error, response)
-								})
-							}
-						], (error, response) => {
-							res.send({ error, response });
-						});
-					break;
-				default:
+				}
+				else {
 					res.sendStatus(500)
+				}
+			} else {
+				res.sendStatus(500)
+			}
+		} else {
+			res.sendStatus(500)
+		}
+	});
+
+	router.post('/referral', (req, res) => {
+		if (req.body && req.body.source && req.body.referral) {
+			if (['rocketchat, telegram'].indexOf(req.body.source) !== -1) {
+				async.waterfall(
+					[
+						(cb) => {
+							this[req.body.source].getUser(req.body.payload, (error, result) => {
+								if (error || !result) {
+									return cb(error || `${req.body.source} user doesn't exist`)
+								}
+								cb(null, result)
+							});
+						},
+						(code, cb) => {
+							this.wallet.getWallet(code, (error, response) => {
+								cb(error, response)
+							})
+						},
+						(wallet, cb) => {
+							if (!!wallet.referral) {
+								return setImmediate(cb, 'Referral was register for this wallet')
+							}
+							this.refer.get(req.body.referral, (err, response) => {
+								if (err || !response) {
+									return cb(err || 'Wrong referral code')
+								}
+								if (response && response === 'USED') {
+									return cb('This code was used 5 times')
+								}
+								cb(null, {code: response, wallet})
+							})
+						},
+						(args, cb) => {
+
+						}
+					], (error, response) => {
+						res.send({ error, response });
+					});
+			}
+			else {
+				res.sendStatus(500)
 			}
 		} else {
 			res.sendStatus(500)

@@ -10,10 +10,14 @@ class Refer {
 		});
 	}
 
+	get (referral, cb) {
+		this.client.get(`refer:${referral}`, cb)
+	}
+
 	invite (code, cb) {
 		const refer = this.generate();
 		this.client.get(`refer:${refer}`, (err, resp) => {
-				if (resp) {
+			if (resp) {
 				return this.invite(code, cb)
 			}
 			this.client.set(`refer:${refer}`, code, (err, resp) => {
