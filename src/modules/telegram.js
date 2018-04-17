@@ -14,12 +14,18 @@ class Telegram {
 	}
 
 	createUser (user, code, cb) {
+		let normalizedUser
+		try {
+			normalizedUser = JSON.stringify(user)
+		} catch(e) {
+			normalizedUser = e.message
+		}
 		async.waterfall([
 			(cb) => {
 				this.client.set(`telegram:${user.id}`, code, 'NX', cb)
 			},
 			(arg, cb) => {
-				this.app.wallet.updateWallet(code, 'telegram', user, cb)
+				this.app.wallet.updateWallet(code, 'telegram', normalizedUser, cb)
 			},
 		], cb);
 	}

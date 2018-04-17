@@ -45,50 +45,34 @@ class Wallet {
 	}
 
 	updateWallet (code, field, value, cb) {
-		async.waterfall([
-			(cb) => {
-				this.getWallet(code, cb)
-			},
-			(wallet, cb) => {
-				if (value) {
-					wallet[field] = value;
-				}
-				else {
-					delete wallet[field];
-				}
-				console.log('WALLET', code, field, value, wallet)
-				this.client.set(code, JSON.stringify(wallet), cb)
-			},
-		], cb);
+		if (value) {
+			this.client.hmset(code, field, value, cb)
+		}
+		else {
+			this.client.hdel(code, field, cb)
+		}
 	}
 
 	getWallet (code, cb) {
-		this.client.get(code, (err, resp) => {
+		this.client.hgetall(code, (err, resp) => {
 			if (err || !resp) {
 				return cb(err || "Walet doesn't exists");
 			}
-
-			let wallet, error;
-			try {
-				wallet = JSON.parse(resp);
-			} catch (e) {
-				error = e;
-			}
-			cb(error, wallet);
+			cb(err, resp);
 		});
 	}
 
 	createWallet (code, cb) {
 		async.waterfall([
 			(cb) => {
-				this.client.set(code, JSON.stringify({ code }), 'NX', (err, result) => {
+				this.client.hmset(code, 'code', code, (err, result) => {
 					cb(err, result);
 				});
 			},
 			(wallet, cb) => {
 				this[__app].refer.invite(code, (err, resp) => {
-					this.updateWallet(code, 'refer', { code: resp, activated: [] }, (err, resp) => {
-						cb(null, code)
+					this.updateWallet(code, 'refer', resp, (err) => {
+						cb(err, code)
 					})
 				});
 			}

@@ -127,9 +127,8 @@ module.exports = function () {
 	);
 
 	router.post('/code', (req, res) => {
-		console.log('TOKEN API')
 		if (req.body && req.body.source) {
-			if (['rocketchat, telegram'].indexOf(req.body.source) !== -1) {
+			if (['rocketchat', 'telegram'].indexOf(req.body.source) !== -1) {
 				async.waterfall(
 					[
 						(cb) => {
@@ -162,7 +161,7 @@ module.exports = function () {
 	router.post('/wallet', (req, res) => {
 		if (req.body && req.body.source) {
 			if (req.body && req.body.source) {
-				if (['rocketchat, telegram'].indexOf(req.body.source) !== -1) {
+				if (['rocketchat', 'telegram'].indexOf(req.body.source) !== -1) {
 					async.waterfall(
 						[
 							(cb) => {
@@ -174,7 +173,9 @@ module.exports = function () {
 								});
 							},
 							(code, cb) => {
+							console.log('GET WALLET')
 								this.wallet.getWallet(code, (error, response) => {
+									console.log('WALLET', response)
 									cb(error, response)
 								})
 							}
@@ -195,7 +196,7 @@ module.exports = function () {
 
 	router.post('/referral', (req, res) => {
 		if (req.body && req.body.source && req.body.referral) {
-			if (['rocketchat, telegram'].indexOf(req.body.source) !== -1) {
+			if (['rocketchat','telegram'].indexOf(req.body.source) !== -1) {
 				async.waterfall(
 					[
 						(cb) => {

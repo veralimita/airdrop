@@ -20,7 +20,7 @@ class Refer {
 			if (resp) {
 				return this.invite(code, cb)
 			}
-			this.client.set(`refer:${refer}`, code, (err, resp) => {
+			this.client.set(`refer:${refer}`, code, (err) => {
 				cb(err, refer)
 			})
 		})

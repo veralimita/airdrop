@@ -14,12 +14,18 @@ class Rocketchat {
 	}
 
 	createUser (user, code, cb) {
+		let normalizedUser
+		try {
+			normalizedUser = JSON.stringify(user)
+		} catch(e) {
+			normalizedUser = e.message
+		}
 		async.waterfall([
 			(cb) => {
 				this.client.set(`rocketchat:${user.id}`, code, 'NX', cb)
 			},
 			(arg, cb) => {
-				this.app.wallet.updateWallet(code, 'rocketchat', user, cb)
+				this.app.wallet.updateWallet(code, 'rocketchat', normalizedUser, cb)
 			},
 		], cb);
 	}
