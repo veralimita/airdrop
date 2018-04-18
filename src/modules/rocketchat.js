@@ -6,6 +6,7 @@ class Rocketchat {
 		this.app = app;
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 	}
 
@@ -37,12 +38,15 @@ class Rocketchat {
 }
 
 module.exports = function () {
-	this.rocketchat = new Rocketchat(this);
-
-	this.on('quit', () => {
-		this.rocketchat[quit];
+	return new Promise((resolve, reject)=>{
+		this.rocketchat = new Rocketchat(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
+		this.on('quit', () => {
+			this.rocketchat[quit];
+		});
 	});
-
-
-	return Promise.resolve();
 };

@@ -1,12 +1,13 @@
 const async = require('async');
 
 class Refer {
-	constructor (app) {
+	constructor (app, cb) {
 		this.app = app;
 		this.length = 12;
 		this.dictionary = 'QAZWSXEDCRFTGBYHNJMKLP23456789';
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 	}
 
@@ -62,12 +63,12 @@ class Refer {
 }
 
 module.exports = function () {
-
-	this.on("ready", () => {
-
+	return new Promise((resolve, reject)=>{
+		this.refer = new Refer(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
 	});
-
-	this.refer = new Refer(this);
-
-	return Promise.resolve();
 }

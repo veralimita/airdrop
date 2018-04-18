@@ -5,9 +5,10 @@ const assert = require("assert"),
 	request = require("request");
 
 class FbAPI {
-	constructor (app) {
+	constructor (app, cb) {
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 		this.client_id = process.env.FB_CLIENT_ID
 		this.client_secret = process.env.FB_CLIENT_SECRET
@@ -71,12 +72,15 @@ class FbAPI {
 }
 
 module.exports = function () {
-
-	this.fb = new FbAPI(this);
-
-	this.on('quit', () => {
-		this.fb[quit];
+	return new Promise((resolve, reject)=>{
+		this.fb = new FbAPI(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
+		this.on('quit', () => {
+			this.fb[quit];
+		});
 	});
-
-	return Promise.resolve();
 }

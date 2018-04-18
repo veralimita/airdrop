@@ -7,6 +7,7 @@ class Storage {
 		this.app = app;
 		app.redis.createClient('codes', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 	}
 
@@ -55,13 +56,15 @@ class Storage {
 }
 
 module.exports = function () {
-	this.storage = new Storage(this);
-
-	this.on('quit', () => {
-		this.storage[quit];
-		console.log('QUIT FROM STORAGE')
+	return new Promise((resolve, reject)=>{
+		this.storage = new Storage(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
+		this.on('quit', () => {
+			this.storage[quit];
+		});
 	});
-
-
-	return Promise.resolve();
 };

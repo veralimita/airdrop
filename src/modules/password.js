@@ -1,12 +1,13 @@
 const async = require('async');
 
 class Password {
-	constructor (app) {
+	constructor (app, cb) {
 		this.app = app;
 		this.length = 6;
 		this.dictionary = '0123456789';
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 	}
 
@@ -45,12 +46,12 @@ class Password {
 }
 
 module.exports = function () {
-
-	this.on("ready", () => {
-
+	return new Promise((resolve, reject)=>{
+		this.password = new Password(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
 	});
-
-	this.password = new Password(this);
-
-	return Promise.resolve();
 }

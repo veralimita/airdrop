@@ -3,10 +3,11 @@ const async = require('async'),
 	__app = Symbol('quit');
 
 class Wallet {
-	constructor(app) {
+	constructor(app, cb) {
 		this[__app] = app;
 		this[__app].redis.createClient('wallet', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 	}
 
@@ -85,12 +86,15 @@ class Wallet {
 }
 
 module.exports = function () {
-
-	this.wallet = new Wallet(this);
-	this.on('quit', () => {
-		console.log('QUIT FROM WALLET');
-		this.wallet[quit];
+	return new Promise((resolve, reject)=>{
+		this.wallet = new Wallet(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
+		this.on('quit', () => {
+			this.wallet[quit];
+		});
 	});
-
-	return Promise.resolve();
 };

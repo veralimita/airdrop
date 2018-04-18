@@ -3,9 +3,10 @@ const assert = require("assert"),
 	quit = Symbol('quit');
 
 class Google {
-	constructor (app) {
+	constructor (app, cb) {
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 	}
 
@@ -38,12 +39,15 @@ class Google {
 }
 
 module.exports = function () {
-
-	this.google = new Google(this);
-
-	this.on('quit', () => {
-		this.google[quit];
+	return new Promise((resolve, reject)=>{
+		this.google = new Google(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
+		this.on('quit', () => {
+			this.google[quit];
+		});
 	});
-
-	return Promise.resolve();
 }

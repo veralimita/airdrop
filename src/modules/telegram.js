@@ -2,10 +2,11 @@ const async = require('async'),
 	quit = Symbol('quit');
 
 class Telegram {
-	constructor (app) {
+	constructor (app, cb) {
 		this.app = app;
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
+			cb(err);
 		});
 	}
 
@@ -37,12 +38,15 @@ class Telegram {
 }
 
 module.exports = function () {
-	this.telegram = new Telegram(this);
-
-	this.on('quit', () => {
-		this.telegram[quit];
+	return new Promise((resolve, reject)=>{
+		this.telegram = new Telegram(this, (err)=>{
+			if (err){
+				return reject(err);
+			}
+			resolve();
+		});
+		this.on('quit', () => {
+			this.telegram[quit];
+		});
 	});
-
-
-	return Promise.resolve();
 };
