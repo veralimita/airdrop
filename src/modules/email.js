@@ -64,7 +64,7 @@ class Email {
 		core.rabbitConnect.listen("email.verification", (err, msg) => {
 			if (err) {
 				console.error(err)
-				return process.nextTick(() => Email.listenVerification(core))
+				return setTimeout(() => Email.listenVerification(core), 1000)
 			}
 
 			const payload = JSON.parse(msg.payload) //validate content
