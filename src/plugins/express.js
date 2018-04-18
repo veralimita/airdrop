@@ -83,6 +83,14 @@ module.exports = function () {
 	this.server = http.createServer(this.express);
 
 	this.on("ready", () => {
+		this.express.use((error, req, res, next) => {
+			if (error.name === 'UnauthorizedError') {
+				res.status(error.status).send({ message: error.message });
+				return;
+			}
+			next();
+		});
+
 		this.server.listen(this.config.get("project.port"), (err) => {
 			if (err) {
 				return console.error("server", err)

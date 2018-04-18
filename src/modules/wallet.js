@@ -3,25 +3,27 @@ const async = require('async'),
 	__app = Symbol('quit');
 
 class Wallet {
-	constructor (app) {
+	constructor(app) {
 		this[__app] = app;
 		this[__app].redis.createClient('wallet', (err, client) => {
 			this.client = client;
 		});
 	}
 
-	[quit] () {
+	[quit]() {
 		this.client && this.client.quit();
 	}
 
-	appendWalletToSocial (source, plugin, wallet, user, code, cb) {
-		if (wallet[source]) return setImmediate(cb, `This wallet has a ${source} account`);
+	appendWalletToSocial(source, plugin, wallet, user, code, cb) {
+		if (wallet[source]) {
+			return setImmediate(cb, `This wallet has a ${source} account`);
+		}
 		async.parallel([
 			(cb) => {
 				plugin.update(user[source], code, cb)
 			},
 			(cb) => {
-				this.updateWallet(code, source, { id: user[source] }, cb)
+				this.updateWallet(code, source, {id: user[source]}, cb)
 			}
 		], (error, results) => {
 			if (error) {
@@ -30,7 +32,7 @@ class Wallet {
 						plugin.update(user[source], 'CREATED', cb)
 					},
 					(cb) => {
-						this.updateWallet(code, source, { id: user[source] }, cb)
+						this.updateWallet(code, source, {id: user[source]}, cb)
 					}
 				], (error) => {
 					console.log('ROLLBACK APPEND WALLET TO ' + source, error ? 'failed' : 'passed')
@@ -38,13 +40,13 @@ class Wallet {
 				})
 			} else {
 				this.getWallet(code, (err, wallet) => {
-					cb(error, { source, wallet })
+					cb(error, {source, wallet})
 				})
 			}
 		})
 	}
 
-	updateWallet (code, field, value, cb) {
+	updateWallet(code, field, value, cb) {
 		if (value) {
 			this.client.hmset(code, field, value, cb)
 		}
@@ -53,7 +55,7 @@ class Wallet {
 		}
 	}
 
-	getWallet (code, cb) {
+	getWallet(code, cb) {
 		this.client.hgetall(code, (err, resp) => {
 			if (err || !resp) {
 				return cb(err || "Walet doesn't exists");
@@ -62,7 +64,7 @@ class Wallet {
 		});
 	}
 
-	createWallet (code, cb) {
+	createWallet(code, cb) {
 		async.waterfall([
 			(cb) => {
 				this.client.hmset(code, 'code', code, (err, result) => {

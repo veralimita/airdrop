@@ -24,7 +24,7 @@ class Telegram {
 			(cb) => {
 				this.client.set(`telegram:${user.id}`, code, 'NX', cb)
 			},
-			(arg, cb) => {
+			(_, cb) => {
 				this.app.wallet.updateWallet(code, 'telegram', normalizedUser, cb)
 			},
 		], cb);

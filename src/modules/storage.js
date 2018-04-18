@@ -3,20 +3,19 @@ const async = require('async'),
 	quit = Symbol('quit');
 
 class Storage {
-	constructor (app, cb) {
+	constructor(app, cb) {
 		this.app = app;
 		app.redis.createClient('codes', (err, client) => {
 			this.client = client;
 		});
 	}
 
-	[quit] () {
+	[quit]() {
 		this.client && this.client.quit();
 	}
 
-	getRandomCode (cb) {
-		async.waterfall(
-			[
+	getRandomCode(cb) {
+		async.waterfall([
 				(cb) => {
 					this.client.send_command('RANDOMKEY', (err, resp) => {
 						if (err || !resp) {
@@ -39,13 +38,13 @@ class Storage {
 			})
 	}
 
-	[__createWallet] (code, cb) {
+	[__createWallet](code, cb) {
 		async.tryEach([
 				(cb) => {
 					this.app.wallet.createWallet(code, cb);
 				},
 				(cb) => {
-					this.client.set(code, JSON.stringify({ code }), (err, result) => {
+					this.client.set(code, JSON.stringify({code}), (err, result) => {
 						cb(err || new Error('Cant create wallet'), code);
 					});
 				}

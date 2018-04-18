@@ -24,7 +24,7 @@ class Rocketchat {
 			(cb) => {
 				this.client.set(`rocketchat:${user.id}`, code, 'NX', cb)
 			},
-			(arg, cb) => {
+			(_, cb) => {
 				this.app.wallet.updateWallet(code, 'rocketchat', normalizedUser, cb)
 			},
 		], cb);
