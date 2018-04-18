@@ -26,10 +26,10 @@ class Refer {
 	use (referral, wallet, cb) {
 		async.parallel([
 			(cb) => {
-				this.client.lpush(`activated:${wallet}`, wallet, cb)
+				this.client.lpush(`activated:${referral}`, wallet.code, cb)
 			},
 			(cb) => {
-				this.app.wallet.updateWallet(wallet, 'referral', referral, cb);
+				this.app.wallet.updateWallet(wallet.code, 'referral', referral, cb);
 			}
 		], cb);
 	}

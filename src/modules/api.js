@@ -213,6 +213,9 @@ module.exports = function () {
 							})
 						},
 						(wallet, cb) => {
+							if (wallet.refer === req.body.referral) {
+								return setImmediate(cb, 'Referral emitted by this account')
+							}
 							if (!!wallet.referral) {
 								return setImmediate(cb, 'Referral was register for this wallet')
 							}
@@ -235,7 +238,13 @@ module.exports = function () {
 							this.refer.use(req.body.referral, wallet, cb)
 						}
 					], (error, response) => {
-						res.send({ error, response });
+						console.log('RESPONSE', error, response)
+						if (error) {
+							res.sendStatus(500)
+						}
+						else {
+							res.send({ response });
+						}
 					});
 			}
 			else {
