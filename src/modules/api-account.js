@@ -137,11 +137,7 @@ module.exports = function () {
 					this.email.create(email, code, cb);
 				},
 				(_, cb) => {
-					// TODO email worker
-					this.email.sendLink({value: email}, code, (error, resp) => {
-						console.log('sended link', {error, resp})
-					});
-					return setImmediate(cb)
+					this.email.sendLink({value: email}, code, cb);
 				},
 			], (error) => {
 				if (error) {
@@ -174,10 +170,7 @@ module.exports = function () {
 					})
 				},
 				(email, cb) => {
-					this.email.sendLink(email, code, (err) => {
-						if (err) console.error(err)
-					});
-					setImmediate(cb);
+					this.email.sendLink(email, code, cb);
 				}
 			], (error, _) => {
 				if (error) {

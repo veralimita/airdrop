@@ -54,16 +54,31 @@ class Email {
 	}
 
 	sendLink(email, code, cb) {
-		async.waterfall([
-			(cb) => {
-				const token = this.app.jwt.create({email, code}, '24h');
-				this.app.emailCompilator.getHtml('verification', 'Verification email', [process.env.EMAIL_VALIDATION_LINK + token], cb)
-			},
-			(body, cb) => {
-				this.app.smtp.send(email && email.value, 'Verification email', body, cb)
-			},
-		], cb)
+		this.app.rabbitConnect.send({
+			email,
+			code
+		}, "email.verification", cb);
+	}
 
+	static listenVerification(core) {
+		core.rabbitConnect.listen("email.verification", (err, msg) => {
+			if (err) {
+				console.error(err)
+				return process.nextTick(() => Email.listenVerification(core))
+			}
+
+			const payload = JSON.parse(msg.payload) //validate content
+
+			async.waterfall([
+				(cb) => {
+					const token = core.jwt.create(payload, '24h');
+					core.emailCompilator.getHtml('verification', 'Verification email', [process.env.EMAIL_VALIDATION_LINK + token], cb)
+				},
+				(body, cb) => {
+					core.smtp.send(payload.email && payload.email.value, 'Verification email', body, cb)
+				},
+			], cb)
+		});
 	}
 
 }
@@ -73,6 +88,10 @@ module.exports = function () {
 
 	this.on('quit', () => {
 		this.email[quit];
+	});
+
+	this.on('ready', () => {
+		Email.listenVerification(this);
 	});
 
 
