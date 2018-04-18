@@ -23,7 +23,7 @@ class Wallet {
 				plugin.update(user[source], code, cb)
 			},
 			(cb) => {
-				this.updateWallet(code, source, {id: user[source]}, cb)
+				this.updateWallet(code, source, JSON.stringify({id: user[source]}), cb)
 			}
 		], (error, results) => {
 			if (error) {

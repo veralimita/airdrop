@@ -16,6 +16,7 @@ module.exports = function () {
 			failureRedirect: 'http://localhost:8000/login?goerrcode=1'
 		}),
 		(req, res) => {
+		console.log('GOOGLE CONNECT')
 			if (req.user && req.user.profile && req.user.profile.id) {
 				async.waterfall([
 					(cb) => {

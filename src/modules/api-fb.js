@@ -10,6 +10,7 @@ module.exports = function () {
 	router.get('/connect', (req, res) => {
 		this.fb.processCode(req.query.code, (error, result) => {
 			if (error) {
+				console.error(error)
 				return res.redirect('http://localhost:8000/login?fberrcode=1');
 			}
 			if (result.user && result.user.id) {

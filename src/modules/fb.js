@@ -32,7 +32,7 @@ class FbAPI {
 						"uri": `https://graph.facebook.com/v2.3/oauth/access_token`,
 						"qs": {
 							client_id: this.client_id,
-							redirect_uri: "http://localhost:8080/connect",
+							redirect_uri: "http://localhost:8080/fb/connect",
 							client_secret: this.client_secret,
 							code: code
 						}
