@@ -2,7 +2,7 @@ const async = require('async'),
 	quit = Symbol('quit');
 
 class Email {
-	constructor(app, cb) {
+	constructor (app, cb) {
 		this.app = app;
 		app.redis.createClient('wallet', (err, client) => {
 			this.client = client;
@@ -10,18 +10,18 @@ class Email {
 		});
 	}
 
-	[quit]() {
+	[quit] () {
 		this.client && this.client.quit();
 	}
 
-	create(email, code, cb) {
+	create (email, code, cb) {
 
 		async.parallel([
 			(cb) => {
 				this.client.set(`email:${email}`, code, "NX", cb)
 			},
 			(cb) => {
-				this.app.wallet.updateWallet(code, 'email', JSON.stringify({value: email, verified: false}), cb);
+				this.app.wallet.updateWallet(code, 'email', JSON.stringify({ value: email, verified: false }), cb);
 			}
 		], (err, results) => {
 			if (err) {
@@ -46,22 +46,32 @@ class Email {
 		});
 	}
 
-	get(email, cb) {
+	deserialize (raw) {
+		let email;
+		try {
+			email = JSON.parse(raw)
+		} catch (error) {
+			email = { error, raw }
+		}
+		return email
+	}
+
+	get (email, cb) {
 		this.client.get(`email:${email}`, cb);
 	}
 
-	delete(email, cb) {
+	delete (email, cb) {
 		this.client.del(`email:${email}`, cb);
 	}
 
-	sendLink(email, code, cb) {
+	sendLink (email, code, cb) {
 		this.app.rabbitConnect.send({
 			email,
 			code
 		}, "email.verification", cb);
 	}
 
-	static listenVerification(core) {
+	static listenVerification (core) {
 		core.rabbitConnect.listen("email.verification", (err, msg) => {
 			if (err) {
 				console.error(err)
@@ -88,9 +98,9 @@ class Email {
 }
 
 module.exports = function () {
-	return new Promise((resolve, reject)=>{
-		this.email = new Email(this, (err)=>{
-			if (err){
+	return new Promise((resolve, reject) => {
+		this.email = new Email(this, (err) => {
+			if (err) {
 				return reject(err);
 			}
 			resolve();

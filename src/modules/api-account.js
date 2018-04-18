@@ -7,7 +7,7 @@ module.exports = function () {
 	const router = express.Router();
 
 	// protected by token apis
-	router.get('/wallet', jwt({secret: process.env.JWT_SECRET}), (req, res) => {
+	router.get('/wallet', jwt({ secret: process.env.JWT_SECRET }), (req, res) => {
 		if (req.user && req.user.wallet) {
 			if (req.user.wallet === 'CREATED') {
 				if (req.user.google) {
@@ -17,7 +17,7 @@ module.exports = function () {
 								wallet: (resp && resp.code) || 'CREATED',
 								google: req.user.google
 							})
-							return res.send({response: resp || {code: 'CREATED'}, token})
+							return res.send({ response: resp || { code: 'CREATED' }, token })
 						})
 					})
 				} else if (req.user.twitter) {
@@ -27,7 +27,7 @@ module.exports = function () {
 								wallet: (resp && resp.code) || 'CREATED',
 								twitter: req.user.twitter
 							})
-							return res.send({response: resp || {code: 'CREATED'}, token})
+							return res.send({ response: resp || { code: 'CREATED' }, token })
 						})
 					})
 				} else if (req.user.facebook) {
@@ -37,7 +37,7 @@ module.exports = function () {
 								wallet: (resp && resp.code) || 'CREATED',
 								facebook: req.user.facebook
 							})
-							return res.send({response: resp || {code: 'CREATED'}, token})
+							return res.send({ response: resp || { code: 'CREATED' }, token })
 						})
 					})
 				} else {
@@ -47,7 +47,7 @@ module.exports = function () {
 						twitter: req.user.twitter,
 						google: req.user.google
 					})
-					return res.send({response: {code: null}, token})
+					return res.send({ response: { code: null }, token })
 				}
 			} else {
 				const token = this.jwt.create({
@@ -58,20 +58,20 @@ module.exports = function () {
 				})
 				this.wallet.getWallet(req.user.wallet, (error, response) => {
 					if (error) {
-						return res.status(500).send({error, token})
+						return res.status(500).send({ error, token })
 					}
-					return res.send({response, token});
+					return res.send({ response, token });
 				})
 			}
 		} else {
-			res.status(500).send({error: 'Wallet doesnt exist', user: req.user})
+			res.status(500).send({ error: 'Wallet doesnt exist', user: req.user })
 		}
 	});
 
-	router.post('/token', jwt({secret: process.env.JWT_SECRET}), (req, res) => {
+	router.post('/token', jwt({ secret: process.env.JWT_SECRET }), (req, res) => {
 		if (req.user && req.user.wallet) {
 			if (req.user.wallet !== 'CREATED') {
-				return res.status(500).send({error: 'Wallet token exists'})
+				return res.status(500).send({ error: 'Wallet token exists' })
 			}
 			const code = req.body && req.body.code.toUpperCase();
 			async.waterfall([
@@ -95,21 +95,21 @@ module.exports = function () {
 				],
 				(error, response) => {
 					if (error) {
-						return res.status(500).send({error});
+						return res.status(500).send({ error });
 					}
 					// normal response
 					const token = this.jwt.create({
 						wallet: response.wallet
 					})
-					return res.send({response: response.wallet, token})
+					return res.send({ response: response.wallet, token })
 				}
 			)
 		} else {
-			res.status(500).send({error: 'Wallet doesnt exist', user: req.user})
+			res.status(500).send({ error: 'Wallet doesnt exist', user: req.user })
 		}
 	});
 
-	router.post('/email', jwt({secret: process.env.JWT_SECRET}), (req, res) => {
+	router.post('/email', jwt({ secret: process.env.JWT_SECRET }), (req, res) => {
 		if (req.user && req.user.wallet && req.body && req.body.value) {
 			const email = req.body.value.toLowerCase();
 			let code = req.user.wallet;
@@ -137,16 +137,16 @@ module.exports = function () {
 					this.email.create(email, code, cb);
 				},
 				(_, cb) => {
-					this.email.sendLink({value: email}, code, cb);
+					this.email.sendLink({ value: email }, code, cb);
 				},
 			], (error) => {
 				if (error) {
-					return res.status(500).res.send({error})
+					return res.status(500).res.send({ error })
 				}
 				this.wallet.getWallet(code, (error, response) => {
-					console.log({error, response})
-					const token = this.jwt.create({wallet: response && response.code})
-					return res.send({error, response, token})
+					console.log({ error, response })
+					const token = this.jwt.create({ wallet: response && response.code })
+					return res.send({ error, response, token })
 				});
 			});
 		} else {
@@ -154,7 +154,7 @@ module.exports = function () {
 		}
 	});
 
-	router.get('/resend', jwt({secret: process.env.JWT_SECRET}), (req, res) => {
+	router.get('/resend', jwt({ secret: process.env.JWT_SECRET }), (req, res) => {
 		if (req.user && req.user.wallet) {
 			const code = req.user.wallet;
 			async.waterfall([
@@ -166,7 +166,8 @@ module.exports = function () {
 						if (!resp.email) {
 							return cb('Wallet doesn\'t have email');
 						}
-						cb(null, resp.email)
+						const dbEmail = this.email.deserialize(resp.email)
+						cb(null, dbEmail)
 					})
 				},
 				(email, cb) => {
@@ -175,9 +176,9 @@ module.exports = function () {
 			], (error, _) => {
 				if (error) {
 					res.status(500);
-					return res.send({error})
+					return res.send({ error })
 				}
-				res.send({token: this.jwt.create({wallet: code}), response: OK});
+				res.send({ token: this.jwt.create({ wallet: code }), response: OK });
 			});
 		} else {
 			res.sendStatus(500)
@@ -189,11 +190,11 @@ module.exports = function () {
 			this.jwt.verify(req.query.token, (error, decoded) => {
 				if (error) {
 					res.status(500);
-					return res.send({error});
+					return res.send({ error });
 				}
 				if (!decoded.code || !decoded.email) {
 					res.status(500);
-					return res.send({error: 'Token is broken'})
+					return res.send({ error: 'Token is broken' })
 				}
 				const email = decoded.email.value;
 				const code = decoded.code;
@@ -216,7 +217,8 @@ module.exports = function () {
 							if (error) {
 								return cb(error);
 							}
-							if (!response.email || (response.email.value != email)) {
+							const dbEmail = this.email.deserialize(response.email)
+							if (dbEmail || dbEmail.value != email) {
 								return cb('Wrong token');
 							}
 							if (response.email.verified) {
@@ -226,21 +228,21 @@ module.exports = function () {
 						});
 					},
 					(wallet, cb) => {
-						this.wallet.updateWallet(wallet, 'email', {value: email, verified: true}, cb);
+						this.wallet.updateWallet(wallet, 'email', { value: email, verified: true }, cb);
 					}
 				], (error) => {
 					if (error) {
 						res.status(500);
-						return res.send({error});
+						return res.send({ error });
 					}
 					this.wallet.getWallet(code, (error, response) => {
-						return res.send({error, response});
+						return res.send({ error, response });
 					});
 				});
 			})
 		} else {
 			res.status(500);
-			res.send({error: 'Token is required'})
+			res.send({ error: 'Token is required' })
 		}
 	});
 
