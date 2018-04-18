@@ -77,7 +77,10 @@ class Email {
 				(body, cb) => {
 					core.smtp.send(payload.email && payload.email.value, 'Verification email', body, cb)
 				},
-			], cb)
+			], (err) => {
+				console.error(err)
+				msg.release();
+			})
 		});
 	}
 
