@@ -99,7 +99,7 @@ module.exports = function () {
 					}
 					// normal response
 					const token = this.jwt.create({
-						wallet: response.wallet
+						wallet: response.wallet.code
 					})
 					return res.send({ response: response.wallet, token })
 				}
@@ -144,7 +144,6 @@ module.exports = function () {
 					return res.status(500).res.send({ error })
 				}
 				this.wallet.getWallet(code, (error, response) => {
-					console.log({ error, response })
 					const token = this.jwt.create({ wallet: response && response.code })
 					return res.send({ error, response, token })
 				});
@@ -198,7 +197,6 @@ module.exports = function () {
 				}
 				const email = decoded.email.value;
 				const code = decoded.code;
-
 				async.waterfall([
 					(cb) => {
 						this.email.get(email, (error, wallet) => {
@@ -218,17 +216,17 @@ module.exports = function () {
 								return cb(error);
 							}
 							const dbEmail = this.email.deserialize(response.email)
-							if (dbEmail || dbEmail.value != email) {
+							if (dbEmail.value != email) {
 								return cb('Wrong token');
 							}
-							if (response.email.verified) {
+							if (dbEmail.verified) {
 								return cb('Email is already verified');
 							}
 							return cb(null, wallet);
 						});
 					},
 					(wallet, cb) => {
-						this.wallet.updateWallet(wallet, 'email', { value: email, verified: true }, cb);
+						this.wallet.updateWallet(wallet, 'email', JSON.stringify({ value: email, verified: true }), cb);
 					}
 				], (error) => {
 					if (error) {
