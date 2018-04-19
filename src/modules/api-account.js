@@ -185,18 +185,15 @@ module.exports = function () {
 
 	router.get('/validate', (req, res) => {
 		if (!req.query || !req.query.token) {
-			res.status(500);
-			res.send({error: 'Token is required'})
+			return res.redirect(`http://localhost:8000/error?text=${Buffer.from("Token is broken").toString('base64')}`)
 		}
 
 		this.jwt.verify(req.query.token, (error, decoded) => {
 			if (error) {
-				res.status(500);
-				return res.send({error});
+				return res.redirect(`http://localhost:8000/error?text=${Buffer.from(error).toString('base64')}`)
 			}
 			if (!decoded.code || !decoded.email) {
-				res.status(500);
-				return res.send({error: 'Token is broken'})
+				return res.redirect(`http://localhost:8000/error?text=${Buffer.from("Token is broken").toString('base64')}`)
 			}
 			const email = decoded.email.value;
 			const code = decoded.code;
@@ -233,11 +230,13 @@ module.exports = function () {
 				}
 			], (error) => {
 				if (error) {
-					res.status(500);
-					return res.send({error});
+					return res.redirect(`http://localhost:8000/error?text=${Buffer.from(error).toString('base64')}`)
 				}
 				this.wallet.getWallet(code, (error, response) => {
-					return res.send({error, response});
+					if (error) {
+						return res.redirect(`http://localhost:8000/error?text=${Buffer.from(error).toString('base64')}`)
+					}
+					res.redirect(`http://localhost:8000/success`)
 				});
 			});
 		})
