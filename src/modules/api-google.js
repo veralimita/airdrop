@@ -16,35 +16,33 @@ module.exports = function () {
 			failureRedirect: 'http://localhost:8000/login?goerrcode=1'
 		}),
 		(req, res) => {
-		console.log('GOOGLE CONNECT')
-			if (req.user && req.user.profile && req.user.profile.id) {
-				async.waterfall([
-					(cb) => {
-						this.google.get(req.user.profile.id, cb)
-					},
-					(googleUser, cb) => {
-						if (googleUser) {
-							setImmediate(cb, null, googleUser)
-						} else {
-							this.google.create(req.user.profile, cb)
-						}
-					},
-				], (error, response) => {
-					if (error) {
-						return res.status(500).send({error})
-					}
-
-					const token = this.jwt.create({wallet: response, google: req.user.profile.id})
-					return res.cookie('auth-token', token, {
-						maxAge: cookiesLive,
-						overwrite: true,
-						httpOnly: false
-					}).redirect('http://localhost:8000/wallet')
-				})
-
-			} else {
-				res.send({error: 'Ooooooooooh! NO!'})
+			if (!req.user || !req.user.profile || !req.user.profile.id) {
+				return res.send({error: 'Ooooooooooh! NO!'})
 			}
+
+			async.waterfall([
+				(cb) => {
+					this.google.get(req.user.profile.id, cb)
+				},
+				(googleUser, cb) => {
+					if (googleUser) {
+						setImmediate(cb, null, googleUser)
+					} else {
+						this.google.create(req.user.profile, cb)
+					}
+				},
+			], (error, response) => {
+				if (error) {
+					return res.status(500).send({error})
+				}
+
+				const token = this.jwt.create({wallet: response, google: req.user.profile.id})
+				return res.cookie('auth-token', token, {
+					maxAge: cookiesLive,
+					overwrite: true,
+					httpOnly: false
+				}).redirect('http://localhost:8000/wallet')
+			})
 		}
 	);
 
