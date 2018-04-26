@@ -57,7 +57,25 @@ class Wallet {
 	}
 
 	getWallet(code, cb) {
-		this.client.hgetall(code, (err, resp) => {
+		async.waterfall([
+			(cb) => {
+				this.client.hgetall(code, (err, resp) => {
+					if (err || !resp) {
+						return cb(err || "Walet doesn't exists");
+					}
+					cb(null, resp);
+				});
+			},
+			(wallet, cb) => {
+				this[__app].refer.getUsed(wallet.refer, (err, len) => {
+					if (err) {
+						return cb(err)
+					}
+					wallet.activated = len;
+					cb(null, wallet)
+				})
+			}
+		], (err, resp) => {
 			if (err || !resp) {
 				return cb(err || "Walet doesn't exists");
 			}
@@ -86,9 +104,9 @@ class Wallet {
 }
 
 module.exports = function () {
-	return new Promise((resolve, reject)=>{
-		this.wallet = new Wallet(this, (err)=>{
-			if (err){
+	return new Promise((resolve, reject) => {
+		this.wallet = new Wallet(this, (err) => {
+			if (err) {
 				return reject(err);
 			}
 			resolve();
