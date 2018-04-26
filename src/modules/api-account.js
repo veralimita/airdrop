@@ -264,9 +264,7 @@ module.exports = function () {
 	router.post('/referral', multiVerify, (req, res) => {
 		async.autoInject({
 			wallet: (cb) => {
-				this.wallet.getWallet(req.user.wallet, (error, response) => {
-					cb(error, response)
-				})
+				this.wallet.getWallet(req.user.wallet, cb)
 			},
 			referral: (wallet, cb) => {
 				if (wallet.refer === req.body.referral) {
@@ -292,13 +290,16 @@ module.exports = function () {
 			},
 			apply: (checkReferral, wallet, cb) => {
 				this.refer.use(req.body.referral, wallet, cb)
-			}
+			},
+			newWallet: (apply, cb) => {
+				this.wallet.getWallet(req.user.wallet, cb)
+			},
 		}, (error, scope) => {
 			if (error) {
 				res.status(500).send({error})
 			}
 			else {
-				res.send({response: scope.wallet});
+				res.send({response: scope.newWallet});
 			}
 		});
 	});
