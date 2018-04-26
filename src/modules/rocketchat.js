@@ -31,8 +31,8 @@ class Rocketchat {
 		], cb);
 	}
 
-	getUser (user, cb) {
-		this.client.get(`rocketchat:${user.id}`, cb);
+	getUser (userId, cb) {
+		this.client.get(`rocketchat:${userId}`, cb);
 	}
 
 }

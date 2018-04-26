@@ -31,8 +31,8 @@ class Telegram {
 		], cb);
 	}
 
-	getUser (user, cb) {
-		this.client.get(`telegram:${user.id}`, cb);
+	getUser (userId, cb) {
+		this.client.get(`telegram:${userId}`, cb);
 	}
 
 }

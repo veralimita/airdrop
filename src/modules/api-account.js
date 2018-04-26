@@ -3,6 +3,25 @@ const express = require('express'),
 	jwt = require('express-jwt'),
 	OK = 'OK';
 
+function multiVerify(req, res, next) {
+	let source = req.query.source || req.body.source;
+	let user = req.query.payload || req.body.payload;
+
+	if (source && user) {
+		this[source].getUser(user.id, (error, result) => {
+			if (error || !result) {
+				return next(error || `${source} user doesn't exist`)
+			}
+			next({
+				...user,
+				wallet: result
+			})
+		});
+	} else {
+		return jwt({secret: process.env.JWT_SECRET})
+	}
+}
+
 module.exports = function () {
 	const router = express.Router();
 
@@ -240,6 +259,48 @@ module.exports = function () {
 				});
 			});
 		})
+	});
+
+	router.post('/referral', multiVerify, (req, res) => {
+		async.autoInject({
+			wallet: (cb) => {
+				this.wallet.getWallet(req.user.wallet, (error, response) => {
+					cb(error, response)
+				})
+			},
+			referral: (wallet, cb) => {
+				if (wallet.refer === req.body.referral) {
+					return setImmediate(cb, 'Referral emitted by this account')
+				}
+				if (!!wallet.referral) {
+					return setImmediate(cb, 'Referral was register for this wallet')
+				}
+				this.refer.get(req.body.referral, (err, response) => {
+					if (err || !response) {
+						return cb(err || 'Wrong referral code')
+					}
+					cb(null, response)
+				})
+			},
+			checkReferral: (referral, wallet, cb) => {
+				this.refer.canUse(req.body.referral, (err) => {
+					if (err) {
+						return cb(err)
+					}
+					cb(null, true)
+				})
+			},
+			apply: (checkReferral, wallet, cb) => {
+				this.refer.use(req.body.referral, wallet, cb)
+			}
+		}, (error, scope) => {
+			if (error) {
+				res.sendStatus(500)
+			}
+			else {
+				res.send({response: OK});
+			}
+		});
 	});
 
 	this.express.use('/account', router);

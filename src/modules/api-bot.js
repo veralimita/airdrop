@@ -12,7 +12,7 @@ module.exports = function () {
 
 		async.waterfall([
 			(cb) => {
-				this[req.body.source].getUser(req.body.payload, (error, result) => {
+				this[req.body.source].getUser(req.body.payload.id, (error, result) => {
 					if (error || result) {
 						return cb(error || `${req.body.source} exists`)
 					}
@@ -39,7 +39,7 @@ module.exports = function () {
 
 		async.waterfall([
 			(cb) => {
-				this[req.body.source].getUser(req.body.payload, (error, result) => {
+				this[req.body.source].getUser(req.body.payload.id, (error, result) => {
 					if (error || !result) {
 						return cb(error || `${req.body.source} user doesn't exist`)
 					}
@@ -63,7 +63,7 @@ module.exports = function () {
 
 		async.autoInject({
 			code: (cb) => {
-				this[req.body.source].getUser(req.body.payload, (error, result) => {
+				this[req.body.source].getUser(req.body.payload.id, (error, result) => {
 					if (error || !result) {
 						return cb(error || `${req.body.source} user doesn't exist`)
 					}
