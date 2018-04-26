@@ -18,7 +18,7 @@ function multiVerify(req, res, next) {
 			})
 		});
 	} else {
-		return jwt({secret: process.env.JWT_SECRET})
+		jwt({secret: process.env.JWT_SECRET})(req, res, next)
 	}
 }
 
