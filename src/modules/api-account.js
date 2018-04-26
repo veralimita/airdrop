@@ -295,10 +295,10 @@ module.exports = function () {
 			}
 		}, (error, scope) => {
 			if (error) {
-				res.sendStatus(500)
+				res.status(500).send({error})
 			}
 			else {
-				res.send({response: OK});
+				res.send({response: scope.wallet});
 			}
 		});
 	});
