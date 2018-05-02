@@ -61,7 +61,7 @@ class Refer {
 
 	getLetter(prev) {
 		let letter = this.dictionary[Math.floor(Math.random() * this.dictionary.length)];
-		if (letter != prev) return letter;
+		if (letter != prev) return letter;0
 		return this.getLetter(prev)
 	}
 }

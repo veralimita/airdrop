@@ -17,6 +17,7 @@ class Smtp {
 	}
 
 	send (address, subject, html, cb) {
+		console.log('SEND EMAIL TO', address);
 		this.transporter.sendMail({
 			from: process.env.SMTP_USER,
 			to: address,

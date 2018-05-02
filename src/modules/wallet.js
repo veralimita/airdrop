@@ -26,7 +26,7 @@ class Wallet {
 			(cb) => {
 				this.updateWallet(code, source, JSON.stringify({id: user[source]}), cb)
 			}
-		], (error, results) => {
+		], (error) => {
 			if (error) {
 				async.parallel([
 					(cb) => {
@@ -77,7 +77,7 @@ class Wallet {
 			}
 		], (err, resp) => {
 			if (err || !resp) {
-				return cb(err || "Walet doesn't exists");
+				return cb(err || "Walet doesn't exist");
 			}
 			cb(err, resp);
 		});
@@ -97,7 +97,7 @@ class Wallet {
 					})
 				});
 			}
-		], (err, resp) => {
+		], (err) => {
 			cb(err, code);
 		});
 	}
