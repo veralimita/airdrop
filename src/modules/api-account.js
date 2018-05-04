@@ -308,7 +308,7 @@ module.exports = function () {
 					chatId: referWalletObj.room,
 					amount: 50,
 					client: referWallet.telegram ? "telegram" : "rocket"
-				}, `${referWallet.telegram ? "telegram" : "rocket"}.notification, cb);
+				}, `${referWallet.telegram ? "telegram" : "rocket"}.notification`, cb);
 			}
 		}, (error, scope) => {
 			if (error) {
