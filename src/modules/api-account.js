@@ -294,6 +294,22 @@ module.exports = function () {
 			newWallet: (apply, cb) => {
 				this.wallet.getWallet(req.user.wallet, cb)
 			},
+			referWallet: (referral, cb) => {
+				this.wallet.getWallet(referral, cb)
+			},
+			notification: (newWallet, referWallet, cb) => {
+				let referWalletObj = {};
+				try {
+					referWalletObj = JSON.parse(referWallet.telegram || referWallet.rocketchat);
+				} catch (e) {
+					return cb(e)
+				}
+				this.rabbitConnect.send({
+					chatId: referWalletObj.room,
+					amount: 50,
+					client: referWallet.telegram ? "telegram" : "rocket"
+				}, "bot.notification", cb);
+			}
 		}, (error, scope) => {
 			if (error) {
 				res.status(500).send({error})
