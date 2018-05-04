@@ -306,8 +306,7 @@ module.exports = function () {
 				}
 				this.rabbitConnect.send({
 					chatId: referWalletObj.room,
-					amount: 50,
-					client: referWallet.telegram ? "telegram" : "rocket"
+					amount: 50
 				}, `${referWallet.telegram ? "telegram" : "rocket"}.notification`, cb);
 			}
 		}, (error, scope) => {
