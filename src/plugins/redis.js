@@ -12,7 +12,8 @@ class Redis {
 		if (this.map[db] === undefined) return cb && cb(new Error(`DB:${db} doesn't exist`));
 		const client = redis.createClient(
 			process.env.REDIS_PORT_6379_TCP_PORT,
-			process.env.REDIS_PORT_6379_TCP_ADDR
+			process.env.REDIS_PORT_6379_TCP_ADDR,
+			{db: this.map[db]}
 		);
 
 		client.on('error', (err) => {
